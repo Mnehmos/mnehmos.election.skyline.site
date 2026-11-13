@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>2026 Midterms in 3D: County Results by Population Density</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0d1016;--panel:rgba(20,24,33,.88);--line:rgba(255,255,255,.09);--ink:#e8eaee;--mute:#8b93a3;--dem:#4a78d0;--rep:#d0544b;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+  body::after{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,transparent 55%,rgba(0,0,0,.45) 100%);z-index:1}
+  header,#card,#legend,#labels{z-index:2} #about{z-index:10}
+  #scene{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block;touch-action:none}
+  header{position:fixed;top:0;left:0;right:0;padding:14px 16px 10px;pointer-events:none;background:linear-gradient(var(--bg) 40%,transparent)}
+  h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em}
+  .sub{color:var(--mute);font-size:12.5px;margin-top:3px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;pointer-events:auto}
+  .seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:2px;backdrop-filter:blur(8px)}
+  .seg button{all:unset;cursor:pointer;font-size:12px;font-weight:500;padding:6px 10px;border-radius:7px;color:var(--mute);white-space:nowrap}
+  .seg button.on{background:rgba(255,255,255,.12);color:var(--ink)}
+  .seg .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);padding:6px 4px 6px 8px;align-self:center}
+  #focusbar{margin-top:8px;pointer-events:auto;align-items:center;gap:4px;padding:2px 4px 2px 2px}
+  #focusbar:not([hidden]){display:inline-flex}
+  #focusbar[hidden]{display:none !important}
+  .xl{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mute);padding:0 6px}
+  #explode{-webkit-appearance:none;appearance:none;width:min(240px,38vw);height:4px;border-radius:2px;background:linear-gradient(90deg,#8fb0ec var(--p,0%),rgba(255,255,255,.18) var(--p,0%));outline:none;margin:10px 0}
+  #explode::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6);cursor:grab}
+  #explode::-moz-range-thumb{width:20px;height:20px;border:0;border-radius:50%;background:#fff;cursor:grab}
+  .cbtn{all:unset;cursor:pointer;margin-top:8px;font-size:11.5px;font-weight:600;color:#cfe0ff;background:rgba(120,160,255,.14);border:1px solid rgba(140,175,255,.3);padding:5px 10px;border-radius:7px}
+  select{font:inherit;font-size:12px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 10px;backdrop-filter:blur(8px)}
+  #card{position:fixed;left:12px;bottom:12px;width:min(340px,calc(100vw - 24px));background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;backdrop-filter:blur(10px);font-size:12.5px;line-height:1.45;transition:opacity .2s}
+  #card .t{font-size:15px;font-weight:600}
+  #card .m{color:var(--mute)}
+  .bar{display:flex;height:7px;border-radius:4px;overflow:hidden;margin:8px 0 6px;background:#333}
+  .row{display:flex;justify-content:space-between;gap:10px}
+  .row b{font-weight:600}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  #legend{position:fixed;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:11px;color:var(--mute);backdrop-filter:blur(10px);width:210px}
+  .ramp{height:9px;border-radius:5px;margin:6px 0 3px;background:linear-gradient(90deg,#2c5ab0,#86a8e6,#d3d5db,#e6928a,#b03a33)}
+  .rampl{display:flex;justify-content:space-between}
+  .nod{display:flex;align-items:center;gap:6px;margin-top:6px}
+  .nod i{width:12px;height:9px;border-radius:2px;background:#30353f;display:inline-block}
+  #info{all:unset;cursor:pointer;color:var(--mute);text-decoration:underline;font-size:11px;margin-top:6px;display:inline-block}
+  .lab{position:fixed;left:0;top:0;pointer-events:none;font-size:10.5px;font-weight:600;color:#fff;white-space:nowrap;text-align:center;line-height:1.2;padding:3px 7px 4px;border-radius:7px;background:rgba(12,15,21,.72);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(4px);transition:opacity .25s;will-change:transform;margin-top:-8px}
+  .lab::after{content:'';position:absolute;left:50%;bottom:-8px;width:1px;height:8px;background:rgba(255,255,255,.45)}
+  .lab span{display:block;font-weight:500;color:#aeb6c4;font-size:9.5px;font-variant-numeric:tabular-nums}
+  #about{position:fixed;inset:0;background:rgba(5,7,10,.72);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+  #about .box{max-width:560px;max-height:85vh;overflow:auto;background:#151a23;border:1px solid var(--line);border-radius:14px;padding:18px 20px;font-size:13px;line-height:1.55}
+  #about h2{font-size:16px;margin:0 0 8px}
+  #about a{color:#8fb4ff}
+  #about button{all:unset;cursor:pointer;float:right;color:var(--mute);font-size:20px;line-height:1}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:13px}
+  /* ---- photo mode ---- */
+  #booth,#boothbar{display:none}
+  body.booth header,body.booth #card,body.booth #legend{opacity:0;pointer-events:none;transition:opacity .35s}
+  body.booth #booth{display:block}
+  body.booth #boothbar{display:flex}
+  #booth{position:fixed;left:28px;bottom:26px;z-index:3;max-width:min(440px,calc(100vw - 40px));pointer-events:none;animation:bIn .5s ease}
+  @keyframes bIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  #booth .bk{font-size:10.5px;letter-spacing:.14em;color:#8e97a8;font-weight:600}
+  #booth .bt{font-size:clamp(30px,5vw,46px);font-weight:700;letter-spacing:-.02em;line-height:1.05;margin-top:4px;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+  #booth .bs{font-size:14px;color:#c3c9d4;margin-top:4px}
+  #bResult{margin-top:12px}
+  #bResult .rr{display:flex;justify-content:space-between;gap:16px;font-size:14px;margin-top:3px}
+  #bResult .rr b{font-variant-numeric:tabular-nums}
+  #bResult .bar{height:6px;margin:8px 0 4px}
+  #booth .benc{margin-top:14px;font-size:11.5px;color:#9aa3b2}
+  #booth .bramp{display:flex;align-items:center;gap:7px;margin-top:6px;font-size:10.5px}
+  #booth .bramp i{display:inline-block;width:120px;height:7px;border-radius:4px;background:linear-gradient(90deg,#2c5ab0,#86a8e6,#d3d5db,#e6928a,#b03a33)}
+  #booth .bramp b{font-weight:500;display:inline-flex;align-items:center;gap:4px;margin-left:6px}
+  #booth .bramp em{display:inline-block;width:10px;height:7px;border-radius:2px;background:#c99a1e}
+  #booth .bsrc{margin-top:10px;font-size:10px;color:#6f7888;line-height:1.4}
+  #boothbar{position:fixed;top:14px;right:14px;z-index:4;gap:6px;transition:opacity .6s}
+  #boothbar button{all:unset;cursor:pointer;font-size:12px;color:#d5dae3;background:rgba(14,17,23,.6);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 10px;backdrop-filter:blur(6px)}
+  #boothbar button.on{background:rgba(120,160,255,.22);border-color:rgba(140,175,255,.4)}
+  body.booth.idle #boothbar{opacity:0}
+  body.booth.idle{cursor:none}
+  @media (max-width:640px){
+    #booth{left:16px;bottom:18px}
+    #booth .bramp i{width:80px}
+    #boothbar{top:10px;right:10px}
+    .xl span{display:none}
+    h1{font-size:15.5px}.sub{font-size:11.5px}
+    #legend{bottom:auto;right:8px;width:124px;padding:6px 8px;font-size:9.5px;top:var(--legendTop,170px)}
+    #legend .ramp{height:7px;margin:4px 0 2px}.seg .lbl{display:none}
+    #card{font-size:12px;padding:10px 12px}
+    .seg button{padding:6px 8px;font-size:11.5px}
+  }
+</style>
+</head>
+<body>
+<div id="loading">Building 3,100 counties…</div>
+<canvas id="scene"></canvas>
+<div id="labels"></div>
+<header>
+  <h1>2026 Midterms in 3D</h1>
+  <div class="sub">County results · height = <span id="hdesc">population density</span> · color = margin</div>
+  <div class="controls">
+    <div class="seg" id="race"><span class="lbl">Race</span><button data-v="auto" class="on">Senate, else Gov</button><button data-v="sen">Senate</button><button data-v="gov">Governor</button></div>
+    <div class="seg" id="height"><span class="lbl">Height</span><button data-v="density" class="on">Density</button><button data-v="votes">Votes</button><button data-v="flat">Flat</button></div>
+    <div class="seg" id="scale"><span class="lbl">Scale</span><button data-v="linear">Linear</button><button data-v="sqrt" class="on">√</button><button data-v="log">Log</button></div>
+    <select id="zoom"><option value="">Zoom: whole US</option></select>
+    <div class="seg"><button id="boothBtn" title="Photo mode: hide controls (P)">📷 Photo mode</button></div>
+  </div>
+  <div id="focusbar" class="seg" hidden>
+    <span class="lbl" id="fname" style="color:var(--ink);font-weight:600;text-transform:none;letter-spacing:0;font-size:12px">Texas</span>
+    <label class="xl"><span>Explode counties</span><input id="explode" type="range" min="0" max="100" value="0" step="1"></label>
+    <button id="unfocus" title="Show all states">✕ All states</button>
+  </div>
+</header>
+<div id="legend">
+  <div style="color:var(--ink);font-weight:600">County winner's margin</div>
+  <div class="ramp"></div>
+  <div class="rampl"><span>D+40</span><span>even</span><span>R+40</span></div>
+  <div class="nod"><i style="background:linear-gradient(90deg,#d3d5db,#a88022)"></i> Independent leads</div>
+  <div class="nod"><i></i> No county results yet</div>
+  <button id="info">Data &amp; caveats</button>
+</div>
+<div id="booth" aria-hidden="true">
+  <div class="bk">2026 MIDTERMS · UNOFFICIAL COUNTY RESULTS</div>
+  <div class="bt" id="bTitle">United States</div>
+  <div class="bs" id="bSub"></div>
+  <div id="bResult"></div>
+  <div class="benc"><span id="bEnc"></span>
+    <div class="bramp"><span>D+40</span><i></i><span>R+40</span><b id="bInd"><em></em>Ind.</b><b><em style="background:#30353f"></em>No data</b></div>
+  </div>
+  <div class="bsrc" id="bSrc"></div>
+</div>
+<div id="boothbar">
+  <button id="bOrbit">⟳ Orbit</button><button id="bLabels">Labels on</button><button id="bExit">✕ Exit</button>
+</div>
+<div id="card"><div class="t">Tap or hover a county</div><div class="m">Drag to orbit · pinch or scroll to zoom · two-finger drag to pan</div></div>
+<div id="about"><div class="box"><button aria-label="Close" onclick="document.getElementById('about').style.display='none'">×</button>
+  <h2>Data &amp; caveats</h2>
+  <p><b>Results:</b> unofficial November 3, 2026 returns from each state's own election office. Nothing is certified yet; counts will keep moving. Where a state was available from several collectors, the newest official feed won. Every race shown and its source:</p>
+  <div id="srclist" style="font-size:11.5px;color:#b9c0cc;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-bottom:10px"></div>
+  <p><b>Still gray, and why:</b> no county-level results reachable yet for New York, Illinois, Michigan (2 counties only), Wisconsin (Milwaukee only), New Jersey (4 counties only), Kentucky, Mississippi, Oklahoma, Tennessee, Wyoming, Kansas, Maine, Massachusetts, New Hampshire or Nevada: their sites either block automated access, publish only after certification, or (Michigan, New Jersey) leave results to each county clerk. Alaska reports by state House district, not borough. Other gray states had no Senate or governor race. Wikipedia's county tables for 2026 aren't up yet either.</p>
+  <p><b>Two-way margin:</b> each race uses its top two candidates statewide, whatever their party, so Nebraska, Montana, South Dakota and Idaho's Senate races (Republican vs independent) and Rhode Island's governor race (Democrat vs independent) are drawn honestly. Gold = an independent leads the county.</p>
+  <p><b>Height:</b> population density = 2024 Census population estimate ÷ land area (sq mi, 2024 Gazetteer). Connecticut uses 2020 estimates for its old counties. "Votes" uses total votes cast in the selected race.</p>
+  <p><b>Color:</b> (Republican − Democratic) ÷ all votes in the race, saturating at 40 points. Independents/minor parties count toward the total only.</p>
+  <p><b>Shapes:</b> US Census county boundaries via us-atlas, Albers USA projection (Alaska/Hawaii inset).</p>
+  <p style="color:var(--mute)">Built Nov 12, 2026. Statewide sums were checked against the sources' own statewide totals, and several races (TX, SC Senate) against AP calls in news reports.</p>
+</div></div>
+
+<script id="geo" type="application/json">__GEO__</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const DATA = JSON.parse(document.getElementById('geo').textContent);
+const { W, H, counties } = DATA;
+const STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'District of Columbia',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming'};
+
+// ---------- state ----------
+const S = { race: 'auto', height: 'density', scale: 'sqrt' };
+const N = counties.length;
+for (const c of counties) c.d = (c.p && c.a) ? c.p / c.a : 0;
+
+// ---------- three setup ----------
+const canvas = document.getElementById('scene');
+const MOBILE = Math.min(innerWidth, innerHeight) < 700;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, MOBILE ? 2 : 1.75));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .92;
+const BG = 0x0b0e14;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(BG);
+scene.fog = new THREE.Fog(BG, 1500, 4000);
+const camera = new THREE.PerspectiveCamera(36, 1, 1, 8000);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .08;
+controls.maxPolarAngle = Math.PI * .46; controls.minDistance = 18; controls.maxDistance = 4200;
+controls.zoomSpeed = 1.1; controls.rotateSpeed = .7; controls.panSpeed = .9;
+controls.screenSpacePanning = false;
+scene.add(new THREE.HemisphereLight(0xe4ebff, 0x1a1e27, 1.5));
+const sun = new THREE.DirectionalLight(0xfff4e6, 2.6);
+sun.position.set(-420, 820, 360);
+sun.castShadow = true;
+sun.shadow.mapSize.set(MOBILE ? 2048 : 4096, MOBILE ? 2048 : 4096);
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = .35; sun.shadow.radius = 3;
+const SC = sun.shadow.camera; SC.near = 10; SC.far = 2600;
+scene.add(sun, sun.target);
+const fill = new THREE.DirectionalLight(0x8fa8ff, .55); fill.position.set(520, 260, -620); scene.add(fill);
+// keep the shadow frustum hugging whatever the camera is looking at, so shadows stay crisp when zoomed in
+function fitShadow() {
+  const t = controls.target, d = camera.position.distanceTo(t);
+  const half = THREE.MathUtils.clamp(d * .75, 60, 640);
+  sun.position.set(t.x - 420, 820, t.z + 360); sun.target.position.copy(t);
+  SC.left = -half; SC.right = half; SC.top = half; SC.bottom = -half;
+  SC.updateProjectionMatrix();
+  // tighter depth range = less z-fighting/clipping
+  camera.near = Math.max(.5, d * .01); camera.far = d * 6 + 800; camera.updateProjectionMatrix();
+  scene.fog.near = d * 1.35; scene.fog.far = d * 3.6;
+}
+
+// ---------- geometry: one merged mesh, top vertices flagged so heights update in place ----------
+const INSET = .16;
+// drop closing duplicates, near-coincident points and zero-width spikes before insetting
+function cleanRing(ring) {
+  let r = ring.slice();
+  for (let pass = 0; pass < 3; pass++) {
+    const out = [];
+    for (const p of r) { const q = out[out.length - 1]; if (!q || Math.hypot(p.x - q.x, p.y - q.y) > .04) out.push(p); }
+    while (out.length > 2 && Math.hypot(out[0].x - out[out.length - 1].x, out[0].y - out[out.length - 1].y) <= .04) out.pop();
+    const n = out.length, keep = [];
+    for (let i = 0; i < n; i++) {
+      const p = out[(i - 1 + n) % n], c = out[i], q = out[(i + 1) % n];
+      const cross = (c.x - p.x) * (q.y - c.y) - (c.y - p.y) * (q.x - c.x);
+      const dot = (c.x - p.x) * (q.x - c.x) + (c.y - p.y) * (q.y - c.y);
+      if (Math.abs(cross) < 1e-4 && dot < 0) continue; // spike that doubles back on itself
+      keep.push(c);
+    }
+    if (keep.length === r.length) { r = keep; break; }
+    r = keep;
+  }
+  return r;
+}
+function selfCrosses(r) {
+  const n = r.length, o = (p, q, t) => Math.sign((q.x - p.x) * (t.y - p.y) - (q.y - p.y) * (t.x - p.x));
+  for (let i = 0; i < n; i++) {
+    const a = r[i], b = r[(i + 1) % n];
+    const minx = Math.min(a.x, b.x), maxx = Math.max(a.x, b.x), miny = Math.min(a.y, b.y), maxy = Math.max(a.y, b.y);
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue;
+      const c = r[j], d = r[(j + 1) % n];
+      if (Math.max(c.x, d.x) < minx || Math.min(c.x, d.x) > maxx || Math.max(c.y, d.y) < miny || Math.min(c.y, d.y) > maxy) continue;
+      if (o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0) return true;
+    }
+  }
+  return false;
+}
+// inset, shrinking the offset until the outline no longer folds over itself
+function insetRing(ring) {
+  for (const f of [1, .55, .3]) { const r = insetOnce(ring, INSET * f); if (r !== ring && !selfCrosses(r)) return r; }
+  return ring;
+}
+function insetOnce(ring, INSET) {
+  const n = ring.length, out = [];
+  for (let i = 0; i < n; i++) {
+    const p = ring[(i - 1 + n) % n], c = ring[i], q = ring[(i + 1) % n];
+    let ax = c.x - p.x, az = c.y - p.y, bx = q.x - c.x, bz = q.y - c.y;
+    const la = Math.hypot(ax, az) || 1, lb = Math.hypot(bx, bz) || 1;
+    const n1x = -az / la, n1z = ax / la, n2x = -bz / lb, n2z = bx / lb; // left normals = toward the county's interior
+    let mx = n1x + n2x, mz = n1z + n2z; const lm = Math.hypot(mx, mz);
+    if (lm < 1e-6) { mx = n1x; mz = n1z; } else { mx /= lm; mz /= lm; }
+    const k = Math.min(INSET / Math.max(mx * n1x + mz * n1z, .4), INSET * 2.5);
+    out.push(new THREE.Vector2(c.x + mx * k, c.y + mz * k));
+  }
+  const a0 = THREE.ShapeUtils.area(ring), a1 = THREE.ShapeUtils.area(out);
+  // tiny or needle-thin shapes would invert: keep them as they were
+  return (Math.sign(a0) === Math.sign(a1) && Math.abs(a1) > Math.abs(a0) * .45) ? out : ring;
+}
+const pos = [], top = [], cid = [], nrm = [], shd = [];
+const centroid = new Float32Array(N * 2);
+const triOwner = []; // triangle -> county
+for (let ci = 0; ci < N; ci++) {
+  const c = counties[ci];
+  let cx = 0, cz = 0, cn = 0;
+  for (const poly of c.g) {
+    let rings = poly.map(r => { const v = []; for (let i = 0; i < r.length; i += 2) v.push(new THREE.Vector2(r[i] / 10 - W / 2, r[i + 1] / 10 - H / 2)); return cleanRing(v); }).filter(r => r.length >= 3);
+    if (!rings.length) continue;
+    // ensure outer ring orientation consistent
+    if (THREE.ShapeUtils.isClockWise(rings[0])) rings[0].reverse();
+    for (let h = 1; h < rings.length; h++) if (!THREE.ShapeUtils.isClockWise(rings[h])) rings[h].reverse();
+    // pull every county in by a hair: neighbours no longer share coplanar walls (no flicker) and a crisp seam shows
+    rings = rings.map(insetRing);
+    for (const p of rings[0]) { cx += p.x; cz += p.y; cn++; }
+    const flat = rings.flat();
+    const tris = THREE.ShapeUtils.triangulateShape(rings[0], rings.slice(1));
+    for (const t of tris) {
+      for (const k of [t[0], t[2], t[1]]) { const p = flat[k]; pos.push(p.x, 1, p.y); top.push(1); cid.push(ci); nrm.push(0, 1, 0); shd.push(1); }
+      triOwner.push(ci);
+    }
+    for (const ring of rings) {
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i], b = ring[(i + 1) % ring.length];
+        const dx = b.x - a.x, dz = b.y - a.y, L = Math.hypot(dx, dz) || 1;
+        const nx = dz / L, nz = -dx / L;
+        const quad = [[a, 1], [a, 0], [b, 0], [a, 1], [b, 0], [b, 1]];
+        for (const [p, t] of quad) { pos.push(p.x, t, p.y); top.push(t); cid.push(ci); nrm.push(nx, 0, nz); shd.push(t ? .86 : .5); }
+        triOwner.push(ci, ci);
+      }
+    }
+  }
+  centroid[ci * 2] = cx / cn; centroid[ci * 2 + 1] = cz / cn;
+}
+const geom = new THREE.BufferGeometry();
+const posAttr = new THREE.BufferAttribute(new Float32Array(pos), 3);
+const colAttr = new THREE.BufferAttribute(new Float32Array(pos.length), 3);
+geom.setAttribute('position', posAttr);
+geom.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(nrm), 3));
+geom.setAttribute('color', colAttr);
+const TOP = new Uint8Array(top), CID = new Uint16Array(cid), SHD = new Float32Array(shd);
+const BX = new Float32Array(CID.length), BZ = new Float32Array(CID.length);
+for (let v = 0; v < CID.length; v++) { BX[v] = pos[v * 3]; BZ[v] = pos[v * 3 + 2]; }
+const off = new Float32Array(N * 2), offT = new Float32Array(N * 2); // per-county explode offset (current, target)
+const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .78, metalness: 0 }));
+mesh.castShadow = mesh.receiveShadow = true;
+scene.add(mesh);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), new THREE.MeshStandardMaterial({ color: 0x0f131b, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.position.y = -.02; ground.receiveShadow = true; scene.add(ground);
+
+// ---------- data helpers ----------
+const RACES = DATA.races;
+let sel = null;
+let focus = null, explodeK = 0;            // focused state + explode amount 0..1
+const EXPLODE_MAX = 1.1;
+function raceOf(c) {
+  const rk = S.race === 'auto' ? (c.sen ? 'sen' : c.gov ? 'gov' : null) : (c[S.race] ? S.race : null);
+  if (!rk) return [null, null];
+  const [A, B, O] = c[rk], m = RACES[c.s + '-' + rk];
+  return [rk, { A, B, O, m }];
+}
+const tot = r => r.A + r.B + r.O;
+const PARTY = { D: [[0x86, 0xa8, 0xe6], [0x2c, 0x5a, 0xb0]], R: [[0xe6, 0x92, 0x8a], [0xb0, 0x3a, 0x33]], I: [[0xe3, 0xc6, 0x7a], [0xa8, 0x80, 0x22]] };
+const NEUT = [0xd3, 0xd5, 0xdb];
+function raceColor(r) {
+  const T = tot(r); if (!T) return null;
+  const m = (r.A - r.B) / T, p = m >= 0 ? r.m.Ap : r.m.Bp, a = Math.min(Math.abs(m), .4);
+  const [mid, deep] = PARTY[p] || PARTY.I;
+  const lerp = (x, y, t) => x.map((v, k) => (v + (y[k] - v) * t) / 255);
+  return a < .15 ? lerp(NEUT, mid, a / .15) : lerp(mid, deep, (a - .15) / .25);
+}
+const ramp = [[-.4, [0x1d, 0x4f, 0xb8]], [-.15, [0x5b, 0x8f, 0xf0]], [0, [0xc9, 0xcd, 0xd6]], [.15, [0xf0, 0x7a, 0x72]], [.4, [0xb8, 0x23, 0x1d]]];
+function marginColor(m) {
+  m = Math.max(-.4, Math.min(.4, m));
+  for (let i = 0; i < ramp.length - 1; i++) {
+    const [a, ca] = ramp[i], [b, cb] = ramp[i + 1];
+    if (m <= b) { const t = (m - a) / (b - a); return ca.map((v, k) => (v + (cb[k] - v) * t) / 255); }
+  }
+  return ramp[ramp.length - 1][1].map(v => v / 255);
+}
+const NODATA = [0x30 / 255, 0x35 / 255, 0x40 / 255];
+const toLin = v => v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4);
+const MAXH = 260;
+let heights = new Float32Array(N), target = new Float32Array(N), colors = [];
+
+function compute() {
+  let vals = new Float32Array(N), max = 0;
+  for (let i = 0; i < N; i++) {
+    const c = counties[i];
+    let v = 0;
+    if (S.height === 'density') v = c.d;
+    else if (S.height === 'votes') { const [, r] = raceOf(c); v = r ? tot(r) : 0; }
+    vals[i] = v; if ((!focus || c.s === focus) && v > max) max = v;
+  }
+  // a singled-out state gets heights scaled to its own size and its own tallest county
+  let maxH = MAXH;
+  if (focus) maxH = focusMaxH(focus);
+  const f = S.scale === 'linear' ? x => x : S.scale === 'sqrt' ? Math.sqrt : x => Math.log10(1 + x);
+  const fm = f(max) || 1;
+  for (let i = 0; i < N; i++) {
+    target[i] = S.height === 'flat' ? 1.2 : 1.2 + Math.min(1, f(vals[i]) / fm) * maxH * (S.scale === 'log' ? .45 : 1);
+    if (focus && counties[i].s !== focus) target[i] = .3;
+  }
+  setExplodeTargets();
+  colors = counties.map(c => { const [, r] = raceOf(c); return (r && raceColor(r)) || NODATA; });
+  paint();
+  document.getElementById('hdesc').textContent = { density: 'population density', votes: 'total votes cast', flat: 'nothing (flat)' }[S.height];
+  pickLabels.dirty = true; pickLabels();
+  if (sel != null) showCard(sel);
+}
+const DIM = [0x1c, 0x21, 0x2a].map(v => toLin(v / 255));
+function paint() {
+  const ca = colAttr.array, lin = colors.map(c => c.map(toLin));
+  for (let v = 0; v < CID.length; v++) {
+    const ci = CID[v];
+    const k = SHD[v], hi = ci === sel ? .45 : 0;
+    if (focus && counties[ci].s !== focus) { for (let j = 0; j < 3; j++) ca[v * 3 + j] = DIM[j] * (TOP[v] ? 1 : .6); continue; }
+    const col = lin[ci];
+    for (let j = 0; j < 3; j++) ca[v * 3 + j] = (col[j] * (1 - hi) + hi) * k;
+  }
+  colAttr.needsUpdate = true;
+}
+function stateCenter(s) { const b = bounds[s]; return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; }
+function setExplodeTargets() {
+  offT.fill(0);
+  if (!focus) return;
+  const [sx, sz] = stateCenter(focus), k = explodeK * EXPLODE_MAX;
+  for (let i = 0; i < N; i++) if (counties[i].s === focus) {
+    offT[i * 2] = (centroid[i * 2] - sx) * k; offT[i * 2 + 1] = (centroid[i * 2 + 1] - sz) * k;
+  }
+}
+function select(i) { if (i === sel) return; sel = i; showCard(i); paint(); }
+function applyHeights() {
+  const pa = posAttr.array;
+  for (let v = 0; v < CID.length; v++) {
+    const c = CID[v];
+    pa[v * 3] = BX[v] + off[c * 2]; pa[v * 3 + 2] = BZ[v] + off[c * 2 + 1];
+    if (TOP[v]) pa[v * 3 + 1] = heights[c];
+  }
+  posAttr.needsUpdate = true;
+  geom.computeBoundingSphere();
+}
+
+// ---------- labels for the tallest columns ----------
+const labelBox = document.getElementById('labels');
+let labelIdx = [];
+function fmt(n) { return n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'K' : Math.round(n) + ''; }
+const BY_H = () => [...Array(N).keys()].filter(i => target[i] > 2).sort((a, b) => target[b] - target[a]);
+let order = [];
+function pickLabels() {
+  if (!order.length || pickLabels.dirty !== false) order = BY_H();
+  pickLabels.dirty = false;
+  const n = innerWidth < 640 ? 5 : 10;
+  const next = [], pts = [];
+  camera.updateMatrixWorld();
+  for (const i of order) {
+    if (focus && counties[i].s !== focus) continue;
+    tmp.set(centroid[i * 2] + offT[i * 2], target[i], centroid[i * 2 + 1] + offT[i * 2 + 1]).project(camera);
+    if (tmp.z > 1 || Math.abs(tmp.x) > .92 || tmp.y > .8 || tmp.y < -.85) continue;
+    const x = (tmp.x + 1) / 2 * innerWidth, y = (1 - tmp.y) / 2 * innerHeight;
+    if (pts.some(([px, py]) => Math.abs(px - x) < 90 && Math.abs(py - y) < 40)) continue;
+    pts.push([x, y]); next.push(i);
+    if (next.length >= n) break;
+  }
+  if (S.height === 'flat') next.length = 0;
+  if (next.join() === labelIdx.join()) return;
+  labelIdx = next;
+  labelBox.innerHTML = labelIdx.map(i => {
+    const c = counties[i]; const [, r] = raceOf(c);
+    const sub = S.height === 'votes' ? (r ? fmt(tot(r)) + ' votes' : '') : fmt(c.d) + '/sq mi';
+    return `<div class="lab">${c.n.replace(/ \(incl\..*\)$/, '').replace(/ (County|Parish|city|Borough|Census Area)$/, '')}<span>${sub}</span></div>`;
+  }).join('');
+}
+const tmp = new THREE.Vector3();
+let hdrBottom = 0;
+function placeLabels() {
+  const els = labelBox.children, boxes = [];
+  for (const id of booth.on ? ['booth'] : ['legend', 'card']) { const r = document.getElementById(id).getBoundingClientRect(); boxes.push([r.left - 8, r.top - 8, r.right + 8, r.bottom + 8]); }
+  for (let k = 0; k < labelIdx.length; k++) {
+    const i = labelIdx[k];
+    tmp.set(centroid[i * 2] + off[i * 2], heights[i] + 2, centroid[i * 2 + 1] + off[i * 2 + 1]).project(camera);
+    const el = els[k];
+    const x = (tmp.x + 1) / 2 * innerWidth, y = (1 - tmp.y) / 2 * innerHeight;
+    const w = el.offsetWidth || 70, h = el.offsetHeight || 26;
+    const xc = Math.min(Math.max(x, w / 2 + 6), innerWidth - w / 2 - 6);
+    const box = [xc - w / 2 - 4, y - h - 10, xc + w / 2 + 4, y];
+    const hit = boxes.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1]);
+    if (tmp.z > 1 || y < hdrBottom + 30 || y > innerHeight - 20 || x < 0 || x > innerWidth || hit) { el.style.opacity = 0; continue; }
+    boxes.push(box);
+    el.style.opacity = 1;
+    el.style.transform = `translate(${xc}px, ${y}px) translate(-50%, -100%)`;
+  }
+}
+
+// ---------- card ----------
+const card = document.getElementById('card');
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+function showCard(i) {
+  const c = counties[i]; const [rk, r] = raceOf(c);
+  const st = STATE_NAMES[c.s] || c.s;
+  let h = `<div class="t">${esc(c.n)}, ${esc(st)}</div><div class="m">${c.p ? c.p.toLocaleString() : '–'} people · ${c.d ? Math.round(c.d).toLocaleString() : '–'} per sq mi</div>`;
+  if (r && tot(r)) {
+    const T = tot(r), M = r.m, ap = r.A / T * 100, bp = r.B / T * 100, m = ap - bp;
+    const col = p => p === 'D' ? 'var(--dem)' : p === 'R' ? 'var(--rep)' : '#d4a52a';
+    // keep Democrat-ish on the left of the bar
+    const L = M.Bp === 'D' || (M.Ap === 'R' && M.Bp === 'I') ? ['B', 'A'] : ['A', 'B'];
+    const v = k => r[k], n = k => M[k], pp = k => M[k + 'p'];
+    const lw = v(L[0]) / T * 100, rw = v(L[1]) / T * 100;
+    const line = k => `<div class="row"><span><span class="dot" style="background:${col(pp(k))}"></span>${esc(n(k))} (${pp(k)})</span><b>${(v(k) / T * 100).toFixed(1)}% · ${v(k).toLocaleString()}</b></div>`;
+    h += `<div style="margin-top:8px;font-weight:600">${rk === 'sen' ? 'U.S. Senate' : 'Governor'} <span class="m" style="font-weight:400">· ${T.toLocaleString()} votes</span></div>
+      <div class="bar"><div style="width:${lw}%;background:${col(pp(L[0]))}"></div><div style="width:${100 - lw - rw}%;background:#777"></div><div style="width:${rw}%;background:${col(pp(L[1]))}"></div></div>
+      ${line(L[0])}${line(L[1])}
+      ${r.O ? `<div class="row m"><span><span class="dot" style="background:#777"></span>Others</span><span>${(r.O / T * 100).toFixed(1)}%</span></div>` : ''}
+      <div class="m" style="margin-top:4px">Margin: ${m >= 0 ? M.Ap : M.Bp}+${Math.abs(m).toFixed(1)} · unofficial · as of ${esc(M.asof)}</div>
+      <div class="m" style="font-size:11px">${esc(M.src)}</div>`;
+  } else h += `<div class="m" style="margin-top:6px">No county-level ${S.race === 'gov' ? 'governor' : S.race === 'sen' ? 'Senate' : 'Senate or governor'} results in this snapshot.</div>`;
+  if (c.s && focus !== c.s) h += `<button class="cbtn" data-focus="${c.s}">Single out ${esc(st)} →</button>`;
+  card.innerHTML = h;
+}
+
+// ---------- picking ----------
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let down = null;
+function pick(e) {
+  mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hits = ray.intersectObject(mesh);
+  for (const h of hits) { const c = CID[h.face.a]; if (!focus || counties[c].s === focus) return c; }
+  return null;
+}
+canvas.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerup', e => {
+  if (booth.on) { down = null; return; }
+  if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) < 6) { const i = pick(e); if (i != null) select(i); }
+  down = null;
+});
+let hoverT = 0;
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse' || e.buttons || booth.on) return;
+  const now = performance.now(); if (now - hoverT < 40) return; hoverT = now;
+  const i = pick(e); if (i != null) select(i);
+});
+
+// ---------- controls ----------
+function seg(id, key) {
+  const el = document.getElementById(id);
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    S[key] = b.dataset.v; compute();
+  });
+}
+seg('race', 'race'); seg('height', 'height'); seg('scale', 'scale');
+
+// coverage list + zoom menu
+const cov = {};
+const cov2 = {};
+for (const c of counties) { if (c.sen || c.gov) cov[c.s] = (cov[c.s] || 0) + 1; for (const r of ['sen', 'gov']) if (c[r]) cov2[c.s + '-' + r] = (cov2[c.s + '-' + r] || 0) + 1; }
+document.getElementById('srclist').innerHTML = Object.keys(RACES).sort().map(k => { const [s, r] = k.split('-'), m = RACES[k];
+  return `<div style="margin:3px 0"><b style="color:var(--ink)">${STATE_NAMES[s]} ${r === 'sen' ? 'Senate' : 'Governor'}</b> (${cov2[k] || 0} counties): ${esc(m.A)} (${m.Ap}) vs ${esc(m.B)} (${m.Bp}) · ${esc(m.src)} · as of ${esc(m.asof)}</div>`; }).join('');
+const bounds = {};
+for (let i = 0; i < N; i++) {
+  const s = counties[i].s; if (!s) continue;
+  const b = bounds[s] || (bounds[s] = [1e9, 1e9, -1e9, -1e9]);
+  for (const poly of counties[i].g) for (let k = 0; k < poly[0].length; k += 2) {
+    const x = poly[0][k] / 10 - W / 2, z = poly[0][k + 1] / 10 - H / 2;
+    b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], z); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], z);
+  }
+}
+const zoomSel = document.getElementById('zoom');
+Object.keys(bounds).sort((a, b) => STATE_NAMES[a]?.localeCompare(STATE_NAMES[b])).forEach(s => {
+  const o = document.createElement('option'); o.value = s; o.textContent = (STATE_NAMES[s] || s) + (cov[s] > 10 ? ' ●' : ''); zoomSel.appendChild(o);
+});
+let fly = null;
+function focusMaxH(s) { const b = bounds[s]; return THREE.MathUtils.clamp(Math.max(b[2] - b[0], b[3] - b[1]) * .7, 40, MAXH); }
+// fit a box (incl. its column height) inside the view from any tilt: bounding-sphere fit
+function sphereDist(sx, sz, h) {
+  const vf = THREE.MathUtils.degToRad(camera.fov) / 2, hf = Math.atan(Math.tan(vf) * camera.aspect);
+  return .5 * Math.hypot(sx, sz, h) / Math.sin(Math.min(vf, hf)) * (camera.aspect < 1 ? .8 : 1);
+}
+function fitDist(sx, sz) {
+  const vf = THREE.MathUtils.degToRad(camera.fov) / 2, hf = Math.atan(Math.tan(vf) * camera.aspect);
+  return Math.max(sz / 2 / Math.tan(vf) * 1.25, sx / 2 / Math.tan(hf) * (camera.aspect < 1 ? ((typeof booth !== 'undefined' && booth.on) ? 1.12 : 1.4) : 1.12)) * 0.82;
+}
+function camPose(cx, cz, sx, sz, h) {
+  const d = h != null ? sphereDist(sx, sz, h) : fitDist(sx, sz);
+  if (camera.aspect < 1) cz += (typeof booth !== 'undefined' && booth.on) ? sz * .32 : -sz * .3;
+  return [new THREE.Vector3(cx, d * .78, cz + d * .62), new THREE.Vector3(cx, 0, cz)];
+}
+function flyTo(cx, cz, sx, sz, h) {
+  fly = { t0: performance.now(), from: [camera.position.clone(), controls.target.clone()],
+    to: camPose(cx, cz, sx, sz ?? sx, h) };
+}
+const fbar = document.getElementById('focusbar'), slider = document.getElementById('explode');
+function frameFocus() {
+  if (!focus) return flyTo(0, 30, W, H);
+  const b = bounds[focus], g = 1 + explodeK * EXPLODE_MAX;
+  let [cx, cz] = stateCenter(focus);
+  const sx = Math.max(b[2] - b[0], 30) * g, sz = Math.max(b[3] - b[1], 30) * g;
+  if (booth.on && camera.aspect >= 1) cx -= sx * .14; // leave the caption its own corner
+  flyTo(cx, cz, sx, sz, S.height === 'flat' ? 2 : focusMaxH(focus) * .6);
+}
+function setFocus(s) {
+  focus = s || null;
+  zoomSel.value = focus || '';
+  fbar.hidden = !focus;
+  if (focus) document.getElementById('fname').textContent = STATE_NAMES[focus] || focus;
+  if (!focus) { explodeK = 0; slider.value = 0; slider.style.setProperty('--p', '0%'); }
+  if (sel != null && focus && counties[sel].s !== focus) { sel = null; card.innerHTML = '<div class="t">Tap or hover a county</div>'; }
+  resize(); compute(); frameFocus();
+  if (booth.on) boothCaption();
+}
+zoomSel.addEventListener('change', () => setFocus(zoomSel.value));
+document.getElementById('unfocus').onclick = () => setFocus(null);
+addEventListener('keydown', e => { if (e.key === 'Escape' && focus) setFocus(null); });
+card.addEventListener('click', e => { const b = e.target.closest('[data-focus]'); if (b) setFocus(b.dataset.focus); });
+slider.addEventListener('input', () => {
+  explodeK = slider.value / 100; slider.style.setProperty('--p', slider.value + '%');
+  setExplodeTargets(); pickLabels.dirty = true;
+});
+slider.addEventListener('change', frameFocus);
+document.getElementById('info').onclick = () => document.getElementById('about').style.display = 'flex';
+
+// ---------- photo mode: clear the controls, keep what matters ----------
+const booth = { on: false, labels: true, idleT: 0 };
+function boothCaption() {
+  const st = focus;
+  document.getElementById('bTitle').textContent = st ? (STATE_NAMES[st] || st) : 'United States';
+  const raceName = { auto: 'Senate, or governor where no Senate race', sen: 'U.S. Senate', gov: 'Governor' };
+  let rk = S.race, m = null;
+  if (st) {
+    if (rk === 'auto') rk = RACES[st + '-sen'] ? 'sen' : RACES[st + '-gov'] ? 'gov' : null;
+    m = rk && RACES[st + '-' + rk];
+  }
+  document.getElementById('bSub').textContent = st
+    ? (m ? (rk === 'sen' ? 'U.S. Senate' : 'Governor') + ' · results by county' : 'No county-level results for this state yet')
+    : raceName[S.race] + ' · ' + Object.keys(cov).length + ' states with county results';
+  const res = document.getElementById('bResult');
+  if (m) {
+    const col = p => p === 'D' ? 'var(--dem)' : p === 'R' ? 'var(--rep)' : '#d4a52a';
+    const L = m.Bp === 'D' || (m.Ap === 'R' && m.Bp === 'I') ? ['B', 'A'] : ['A', 'B'];
+    const pct = k => (m[k + 'v'] / m.T * 100);
+    res.innerHTML = `<div class="bar"><div style="width:${pct(L[0])}%;background:${col(m[L[0] + 'p'])}"></div><div style="width:${100 - pct(L[0]) - pct(L[1])}%;background:#555"></div><div style="width:${pct(L[1])}%;background:${col(m[L[1] + 'p'])}"></div></div>`
+      + [L[0], L[1]].map(k => `<div class="rr"><span><span class="dot" style="background:${col(m[k + 'p'])}"></span>${esc(m[k])} (${m[k + 'p']})</span><b>${pct(k).toFixed(1)}%</b></div>`).join('');
+  } else res.innerHTML = '';
+  document.getElementById('bEnc').textContent = 'Height: ' + { density: 'people per square mile', votes: 'total votes cast', flat: 'none (flat map)' }[S.height]
+    + (S.height !== 'flat' ? ' (' + { linear: 'linear', sqrt: 'square-root', log: 'log' }[S.scale] + ' scale)' : '') + ' · Color: county winner\'s margin';
+  const hasInd = st ? (m && (m.Ap === 'I' || m.Bp === 'I')) : true;
+  document.getElementById('bInd').style.display = hasInd ? '' : 'none';
+  document.getElementById('bSrc').textContent = (m ? 'Results: ' + m.src + ', as of ' + m.asof + '. ' : 'Results: each state\'s official election office, unofficial counts as of Nov 4–12, 2026. ')
+    + 'Population: Census 2024 estimates.';
+}
+function setBooth(on) {
+  booth.on = on;
+  document.body.classList.toggle('booth', on);
+  if (on) { boothCaption(); if (sel != null) { sel = null; paint(); } }
+  if (camera.aspect < 1 || focus) frameFocus(); // make room for the caption
+  else { controls.autoRotate = false; document.getElementById('bOrbit').classList.remove('on'); document.body.classList.remove('idle'); }
+  hdrBottom = on ? 0 : document.querySelector('header').getBoundingClientRect().bottom;
+  labelBox.style.display = on && !booth.labels ? 'none' : '';
+  pickLabels.dirty = true; pickLabels();
+  wake();
+}
+function wake() {
+  document.body.classList.remove('idle'); clearTimeout(booth.idleT);
+  if (booth.on) booth.idleT = setTimeout(() => document.body.classList.add('idle'), 2500);
+}
+document.getElementById('boothBtn').onclick = () => setBooth(true);
+document.getElementById('bExit').onclick = () => setBooth(false);
+document.getElementById('bOrbit').onclick = e => {
+  controls.autoRotate = !controls.autoRotate; controls.autoRotateSpeed = .5;
+  e.currentTarget.classList.toggle('on', controls.autoRotate);
+};
+document.getElementById('bLabels').onclick = e => {
+  booth.labels = !booth.labels; labelBox.style.display = booth.labels ? '' : 'none';
+  e.currentTarget.textContent = booth.labels ? 'Labels on' : 'Labels off';
+};
+addEventListener('pointermove', wake); addEventListener('pointerdown', wake);
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'p' || e.key === 'P') setBooth(!booth.on);
+  else if (e.key === 'Escape' && booth.on) { e.stopImmediatePropagation(); setBooth(false); }
+}, true);
+
+// ---------- resize + loop ----------
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  const hdr = document.querySelector('header').getBoundingClientRect();
+  hdrBottom = (typeof booth !== 'undefined' && booth.on) ? 0 : hdr.bottom;
+  document.documentElement.style.setProperty('--legendTop', (hdr.bottom + 4) + 'px');
+}
+addEventListener('resize', () => { resize(); pickLabels(); });
+resize();
+// open on Texas when it's the screenshot's subject? start national, slightly tilted
+{ const [p, t] = camPose(0, 30, W, H); camera.position.copy(p); controls.target.copy(t); }
+compute();
+heights.set(target.map(() => 1.2)); applyHeights();
+document.getElementById('loading').remove();
+
+const lastCam = new THREE.Matrix4(); let camMoved = 1;
+function loop(now) {
+  requestAnimationFrame(loop);
+  let moving = false;
+  for (let i = 0; i < N; i++) { const d = target[i] - heights[i]; if (Math.abs(d) > .05) { heights[i] += d * .12; moving = true; } else heights[i] = target[i]; }
+  for (let j = 0; j < N * 2; j++) { const d = offT[j] - off[j]; if (Math.abs(d) > .01) { off[j] += d * .16; moving = true; } else off[j] = offT[j]; }
+  if (moving) applyHeights();
+  if (fly) {
+    const t = Math.min(1, (now - fly.t0) / 1100), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    camera.position.lerpVectors(fly.from[0], fly.to[0], e); controls.target.lerpVectors(fly.from[1], fly.to[1], e);
+    if (t >= 1) fly = null;
+  }
+  controls.update();
+  fitShadow();
+  if (!camera.matrixWorld.equals(lastCam)) { lastCam.copy(camera.matrixWorld); camMoved = now; }
+  else if (camMoved && now - camMoved > 180) { camMoved = 0; pickLabels(); }
+  renderer.render(scene, camera);
+  placeLabels();
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
