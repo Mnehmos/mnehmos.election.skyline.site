@@ -281,7 +281,7 @@ for (let ci = 0; ci < N; ci++) {
         const a = ring[i], b = ring[(i + 1) % ring.length];
         const dx = b.x - a.x, dz = b.y - a.y, L = Math.hypot(dx, dz) || 1;
         const nx = dz / L, nz = -dx / L;
-        const quad = [[a, 1], [a, 0], [b, 0], [a, 1], [b, 0], [b, 1]];
+        const quad = [[a, 1], [b, 0], [a, 0], [a, 1], [b, 1], [b, 0]]; // CCW seen from outside, matching the outward normal
         for (const [p, t] of quad) { pos.push(p.x, t, p.y); top.push(t); cid.push(ci); nrm.push(nx, 0, nz); shd.push(t ? .86 : .5); }
         triOwner.push(ci, ci);
       }
