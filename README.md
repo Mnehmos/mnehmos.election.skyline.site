@@ -1,7 +1,24 @@
 # 2026 Midterms in 3D — county results by population density
 
+**▶ Live site: https://mnehmos.github.io/mnehmos.election.skyline.site/**
+
+An interactive 3D map of unofficial 2026 midterm results: every covered county is extruded by population density
+(or votes cast) and colored by the winner's margin in the Senate or Governor race.
+
+| | |
+|---|---|
+| Live site | https://mnehmos.github.io/mnehmos.election.skyline.site/ |
+| Merged results (JSON) | https://mnehmos.github.io/mnehmos.election.skyline.site/data/results.json |
+| County shapes + data (JSON) | https://mnehmos.github.io/mnehmos.election.skyline.site/data/geo.json |
+| Source | https://github.com/Mnehmos/mnehmos.election.skyline.site |
+
+### Run locally
 Open `index.html` in a browser (needs an internet connection: three.js and the Inter font load from CDNs).
 Everything else, including all county shapes and results, is inside that one file.
+
+### Deployment
+Every push to `main` deploys `index.html` and `data/` to GitHub Pages via `.github/workflows/pages.yml`
+(Settings → Pages → Source must be set to **GitHub Actions**). You can also run the workflow by hand from the Actions tab.
 
 ## What it shows
 - **Height:** people per square mile (2024 Census estimate ÷ land area), or total votes cast. Linear, square-root or log scale.
